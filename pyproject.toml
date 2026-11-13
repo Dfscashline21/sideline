@@ -1,0 +1,59 @@
+[project]
+name = "sideline"
+version = "0.1.0"
+description = "Sideline: a production-style sports data engineering curriculum (ingestion, transform, orchestration, ml, serving) for NBA/NCAA data."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "ruff>=0.17",
+    "mypy>=2.0",
+    "pytest>=9.0",
+    "pre-commit>=4.0",
+]
+
+# This repo is a collection of scripts/packages under top-level folders
+# (ingestion/, transform/, ...), not a library meant to be built and
+# published itself, so tell uv not to try to build/install it as a package.
+[tool.uv]
+package = false
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+# Folders that will hold importable Python code as the curriculum fills in.
+src = ["ingestion", "transform", "orchestration", "spark", "streaming", "quality", "ml", "serving"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes (unused imports/vars, undefined names, ...)
+    "I",   # isort (import sorting)
+    "UP",  # pyupgrade (modernize syntax for the target Python version)
+    "B",   # flake8-bugbear (common bug-prone patterns)
+    "C4",  # flake8-comprehensions (unnecessary comprehensions/generators)
+    "SIM", # flake8-simplify (simplifiable code patterns)
+]
+
+[tool.ruff.format]
+quote-style = "double"
+docstring-code-format = true
+
+[tool.mypy]
+python_version = "3.12"
+warn_unused_configs = true    # flag mypy config options that don't apply to any file
+warn_redundant_casts = true   # flag `cast()` calls that don't change the inferred type
+warn_unused_ignores = true    # flag `# type: ignore` comments that aren't suppressing anything
+warn_return_any = true        # flag functions that return `Any` from a typed context
+no_implicit_optional = true   # `def f(x: int = None)` must be written `Optional[int]` explicitly
+disallow_untyped_defs = true  # every function must have type annotations
+disallow_incomplete_defs = true  # partially-annotated functions are an error, not allowed
+check_untyped_defs = true     # still type-check the bodies of (nonexistent) untyped functions
+ignore_missing_imports = true # don't fail on third-party packages that ship no type stubs
+
+[tool.pytest.ini_options]
+testpaths = ["ingestion", "transform", "orchestration", "spark", "streaming", "quality", "ml", "serving"]
+python_files = ["test_*.py", "*_test.py"]

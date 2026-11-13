@@ -1,0 +1,29 @@
+repos:
+  # Generic file hygiene checks.
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace   # strip trailing whitespace
+      - id: end-of-file-fixer     # ensure files end with exactly one newline
+      - id: check-yaml            # YAML files parse
+      - id: check-toml            # TOML files parse
+      - id: check-added-large-files  # block accidentally committing big files (data dumps, etc.)
+      - id: check-merge-conflict  # block committing unresolved `<<<<<<<` markers
+      - id: mixed-line-ending     # normalize to LF
+
+  # Lint + format Python with ruff (replaces flake8/isort/black).
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.5
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  # Static type checking.
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v2.4.1
+    hooks:
+      - id: mypy
+        # mypy runs in its own isolated hook env, so it needs its own copy
+        # of anything it imports type stubs for or checks against.
+        additional_dependencies: []
