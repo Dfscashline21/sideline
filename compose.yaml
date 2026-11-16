@@ -9,8 +9,10 @@ name: sideline
 
 services:
   # --- Object storage (raw landing zone) -----------------------------------
+  # pgsty/silo is a community-maintained, API-compatible MinIO fork:
+  # MinIO stopped publishing anonymous images (Docker Hub 404s, Quay 401s).
   minio:
-    image: quay.io/minio/minio:RELEASE.2025-10-15T17-29-55Z
+    image: pgsty/silo:RELEASE.2026-10-26T00-00-00Z
     command: server /data --console-address ":9001"
     env_file: .env
     environment:
@@ -29,7 +31,7 @@ services:
 
   # One-shot job: creates the raw-data bucket once MinIO is healthy, then exits.
   minio-init:
-    image: quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z
+    image: pgsty/mc:RELEASE.2026-10-26T00-00-00Z
     depends_on:
       minio:
         condition: service_healthy

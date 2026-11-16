@@ -235,6 +235,13 @@ otherwise `uv sync` in Linux would overwrite the host's macOS `.venv/`
 with Linux binaries and break local tooling. `uv-cache` is a named
 volume so dependency downloads survive container recreation.
 
+**Image substitution:** the ticket says MinIO, but MinIO stopped
+publishing anonymously-pullable images — Docker Hub returns 404 and
+Quay requires auth as of late 2026. The stack therefore runs
+`pgsty/silo`, a community-maintained MinIO-compatible fork (same
+`MINIO_*` env vars, same `mc` client CLI, same `/minio/health/*`
+endpoints), with `pgsty/mc` for the bucket-init job.
+
 Closes [#19](https://github.com/Dfscashline21/sideline/issues/19).
 
 ### M0.4 — Makefile: up, down, test, lint
