@@ -13,6 +13,7 @@ dev = [
     "mypy>=2.0",
     "pytest>=9.0",
     "pre-commit>=4.0",
+    "duckdb>=1.4,<2",
 ]
 
 # This repo is a collection of scripts/packages under top-level folders
@@ -55,5 +56,5 @@ check_untyped_defs = true     # still type-check the bodies of (nonexistent) unt
 ignore_missing_imports = true # don't fail on third-party packages that ship no type stubs
 
 [tool.pytest.ini_options]
-testpaths = ["ingestion", "transform", "orchestration", "spark", "streaming", "quality", "ml", "serving"]
+testpaths = ["ingestion", "transform", "orchestration", "spark", "streaming", "quality", "ml", "serving", "tests"]
 python_files = ["test_*.py", "*_test.py"]
