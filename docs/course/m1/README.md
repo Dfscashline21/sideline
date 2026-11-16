@@ -7,14 +7,17 @@
 ## The path
 
 ```
-M1.1 study ──► M1.2 load data ──► M1.3 streaks ──► M1.4 rolling avg ──► M1.5 possessions
-                                                                              │
+M1.1 study (toy data) ─────┐
+                           ├──► M1.3 streaks ──► M1.4 rolling avg ──► M1.5 possessions
+M1.2 load practice data ───┘                                                │
+                                                                            ▼
      M1.9 closed-book check ◄── M1.8 20 more problems ◄── M1.7 plan 2x ◄── M1.6 TS% top 3
 ```
 
-M1.1 and M1.2 can run in parallel: study in the evenings while the agent
-drafts the loader. Every problem lab after that needs the practice
-database.
+M1.1 and M1.2 don't depend on each other, so do them in either order or
+in parallel: study in the evenings while the agent drafts the loader. M1.1
+uses only small tables you type in yourself. Every problem lab from M1.3
+on needs **both**: the patterns from M1.1 and the database from M1.2.
 
 | Lab | Core pattern | Interview frequency |
 |---|---|---|
