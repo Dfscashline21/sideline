@@ -25,10 +25,15 @@ throwaway exercise.
 ## Getting started
 
 ```bash
-uv sync              # installs all dev tooling from uv.lock into .venv/
+cp .env.example .env      # local dev secrets (gitignored)
+make up                   # starts MinIO, Postgres, and the dev container
+make sync                 # installs deps from uv.lock into .venv
 uv run pre-commit install   # wires up the git pre-commit hook
 uv run pre-commit run --all-files   # lint/format/type-check everything
 ```
+
+`make help` lists every target. `make down` stops the stack (data volumes
+are kept; `docker compose down -v` wipes them).
 
 ## Build log
 
@@ -194,3 +199,86 @@ config option be explainable — a bundle of ~20 implicit flags is harder
 to point at than a short explicit list.
 
 Closes [#18](https://github.com/Dfscashline21/sideline/issues/18).
+
+### M0.3 — Docker Compose: MinIO, Postgres, DuckDB dev container
+
+**Ask:** a compose file that brings up MinIO (object storage), Postgres,
+and a DuckDB-ready dev container; `sideline-raw` bucket created on
+startup; secrets from `.env`, never committed.
+
+**What was done:**
+- **`compose.yaml`** (root) with four services:
+  - `minio` — S3-compatible object storage on `:9000` (API) and `:9001`
+    (web console), data in a named volume, healthchecked via
+    `/minio/health/live`.
+  - `minio-init` — a one-shot `mc` container that waits for MinIO to be
+    healthy, creates the `sideline-raw` bucket if missing, and locks it
+    to private (no anonymous access). Exits when done; `docker compose
+    up --wait` waits for its successful completion.
+  - `postgres` — Postgres 16 with `pg_isready` healthcheck, data in a
+    named volume, credentials from `.env`.
+  - `dev` — the DuckDB-ready dev container (see below).
+- **`infra/Dockerfile.dev`** — `python:3.12-slim` plus the `uv` binary
+  (copied from the official `ghcr.io/astral-sh/uv` image, pinned). The
+  repo is bind-mounted at `/workspace` and the container runs
+  `uv sync --locked --dev` on start, so the in-container toolchain
+  always matches `uv.lock`.
+- **`.env.example`** — committed template with MinIO and Postgres
+  credentials/ports; `.env` itself was already gitignored in M0.1.
+- Added **`duckdb>=1.4,<2`** to the dev dependency group (capped below
+  2.0 because 2.0.0 was brand-new at resolution time) so the dev
+  container is actually DuckDB-ready.
+
+**How/why:** the venv inside the container lives at `/opt/venv`
+(`UV_PROJECT_ENVIRONMENT`), *outside* the `/workspace` bind mount —
+otherwise `uv sync` in Linux would overwrite the host's macOS `.venv/`
+with Linux binaries and break local tooling. `uv-cache` is a named
+volume so dependency downloads survive container recreation.
+
+Closes [#19](https://github.com/Dfscashline21/sideline/issues/19).
+
+### M0.4 — Makefile: up, down, test, lint
+
+**Ask:** one-command workflows — `make up`, `make down`, `make test`,
+`make lint`, and `make help`.
+
+**What was done:**
+- **`Makefile`** with targets grouped into *local stack* (`up`, `down`,
+  `ps`, `logs`, `dev-shell`) and *Python toolchain* (`sync`, `test`,
+  `lint`, `typecheck`, `format`, `hooks`).
+- `make up` bootstraps `.env` from `.env.example` on first run, then
+  `docker compose up -d --wait` (blocks until all healthchecks pass).
+- `make lint` = `ruff check` + `ruff format --check`; `make typecheck`
+  = `mypy` over `git ls-files '*.py'`.
+- `make help` is self-documenting: every target carries a `## comment`
+  and help greps the Makefile for them — no separate docs to maintain.
+
+**How/why:** mypy is invoked with an explicit file list rather than
+bare `uv run mypy` because most module folders are still empty and
+mypy exits nonzero on directories containing no `.py` files.
+`git ls-files -co --exclude-standard` is used so untracked-but-not-
+ignored files (new work in progress) are still type-checked.
+
+Closes [#20](https://github.com/Dfscashline21/sideline/issues/20).
+
+### M0.5 — GitHub Actions CI on every pull request
+
+**Ask:** CI runs lint, type checks, and tests on every push and PR;
+workflow passes on main; a deliberately broken PR fails; branch
+protection requires CI.
+
+**What was done:**
+- **`.github/workflows/ci.yml`** — on `push` to `main` and every
+  `pull_request`, a single `python` job on `ubuntu-latest`:
+  `actions/checkout` → `astral-sh/setup-uv` (with caching) →
+  `uv sync --locked --dev` → `ruff check` → `ruff format --check` →
+  `mypy` → `pytest`. Same commands as the Makefile, so local and CI
+  can't drift apart.
+- **`tests/test_smoke.py`** — a minimal pytest smoke test (asserts the
+  repo layout exists) plus a `tests` entry in `testpaths`, because
+  pytest exits 5 on "no tests collected" and the module folders don't
+  have real tests yet.
+- Branch protection on `main` configured via the GitHub API to require
+  the `python` check before merging.
+
+Closes [#21](https://github.com/Dfscashline21/sideline/issues/21).
